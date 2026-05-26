@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 245 245 247;
+    --foreground: 28 28 30;
+    --card: 255 255 255;
+    --card-foreground: 28 28 30;
+    --popover: 255 255 255;
+    --popover-foreground: 28 28 30;
+    --primary: 0 113 227;
+    --primary-foreground: 255 255 255;
+    --secondary: 245 245 247;
+    --secondary-foreground: 28 28 30;
+    --accent: 88 86 214;
+    --accent-foreground: 255 255 255;
+    --muted: 242 242 247;
+    --muted-foreground: 110 110 115;
+    --destructive: 255 59 48;
+    --destructive-foreground: 255 255 255;
+    --success: 52 199 89;
+    --success-foreground: 255 255 255;
+    --warning: 255 149 0;
+    --warning-foreground: 28 28 30;
+    --border: 229 229 234;
+    --input: 229 229 234;
+    --ring: 0 113 227;
+    --radius: 0.75rem;
+    --sidebar: 255 255 255;
+    --sidebar-foreground: 28 28 30;
+    --sidebar-muted: 134 134 139;
+    --sidebar-border: 229 229 234;
+    --surface-elevated: 255 255 255;
+    --chart-1: 0 113 227;
+    --chart-2: 255 149 0;
+    --chart-3: 52 199 89;
+    --chart-4: 175 82 222;
+    --chart-5: 255 59 48;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight text-foreground;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .surface-panel {
+    @apply rounded-2xl border border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)];
+  }
+
+  .surface-subtle {
+    @apply rounded-xl border border-black/[0.04] bg-white/80 backdrop-blur-xl;
+  }
+
+  .glass-bar {
+    @apply border-b border-black/[0.06] bg-white/80 backdrop-blur-xl backdrop-saturate-150;
+  }
+
+  .nav-item-active {
+    @apply bg-black/[0.05] text-foreground;
+  }
+
+  .text-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+::selection {
+  background-color: rgba(0, 113, 227, 0.15);
+  color: inherit;
+}
