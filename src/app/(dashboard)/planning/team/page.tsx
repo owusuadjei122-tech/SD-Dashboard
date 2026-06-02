@@ -1,6 +1,8 @@
 import { trackActivity } from "@/lib/actions/user";
 import { PlanningClient } from "../PlanningClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function PlanningTeamPage() {
   await trackActivity({
     activity_type: "page_view",
