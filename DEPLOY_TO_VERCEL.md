@@ -1,187 +1,122 @@
-# 🚀 Deploy SelfDiscovery to Vercel
+# Deploying SelfDiscovery to Vercel
 
-## Step 1: Push to GitHub
-
-### Option A: Using GitHub Desktop (Easiest)
-1. Open **GitHub Desktop**
-2. It will show all your changes
-3. Add commit message: "Production-ready deployment with all fixes"
-4. Click **"Commit to main"**
-5. Click **"Push origin"**
-
-### Option B: Using Terminal with Personal Access Token
-1. Go to https://github.com/settings/tokens
-2. Click "Generate new token" → "Generate new token (classic)"
-3. Check "repo" scope
-4. Generate and copy the token
-5. Run in terminal:
-```bash
-git push https://YOUR_TOKEN@github.com/TheoLencer1/SD-DASHBOARD.git main
-```
-
-### Option C: Using SSH (If configured)
-```bash
-git remote set-url origin git@github.com:TheoLencer1/SD-DASHBOARD.git
-git push origin main
-```
+Repository: `owusuadjei122-tech/SD-Dashboard` (branch `main`)
+Supabase project: `wzwqtgcoezkblkhsggbg`
 
 ---
 
-## Step 2: Deploy to Vercel
+## 1. Confirm the database is migrated
 
-### A. Create Vercel Account (if needed)
-1. Go to https://vercel.com
-2. Sign up with GitHub
-3. Allow Vercel to access your repositories
+The app will build without these, but authentication, approval, and the admin
+console will fail at runtime. In **Supabase → SQL Editor**, run in order:
 
-### B. Import Project
+1. `supabase/migrations/00000000000003_rbac_and_approval.sql`
+2. `supabase/migrations/00000000000004_fix_rls_recursion.sql`
+3. `supabase/migrations/00000000000005_security_and_invitations.sql`
+
+Migration 04 must come after 03 — it replaces the recursive RLS policies that
+03 creates. All three are idempotent and safe to re-run.
+
+To verify, check that `email_outbox`, `security_events`, and `invitations`
+tables exist and that `select public.is_platform_admin(auth.uid())` resolves
+without error.
+
+---
+
+## 2. Import the project into Vercel
+
 1. Go to https://vercel.com/new
-2. Click **"Import Git Repository"**
-3. Find **"TheoLencer1/SD-DASHBOARD"**
-4. Click **"Import"**
+2. Import **owusuadjei122-tech/SD-Dashboard**
+3. Framework preset is detected as **Next.js**; leave build, output, and
+   install commands at their defaults. `vercel.json` already sets the security
+   headers and function timeouts.
 
-### C. Configure Environment Variables
-
-**CRITICAL:** Add these environment variables in Vercel:
-
-1. Click **"Environment Variables"** section
-2. Add each of these:
-
-```
-NEXT_PUBLIC_SUPABASE_URL
-Value: https://wzwqtgcoezkblkhsggbg.supabase.co
-```
-
-```
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3F0Z2NvZXprYmxraHNnZ2JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMzg0MzUsImV4cCI6MjA5NDYxNDQzNX0.26JJU_2CqEy9ZmhV2uGQRaZsZoDi0hhOZ4vSEhKztw4
-```
-
-3. Select **"Production"**, **"Preview"**, and **"Development"** for both
-4. Click **"Add"** for each
-
-### D. Deploy Settings
-
-**Framework Preset:** Next.js
-**Build Command:** (leave default) `npm run build`
-**Output Directory:** (leave default) `.next`
-**Install Command:** (leave default) `npm install`
-
-### E. Deploy!
-
-1. Click **"Deploy"**
-2. Wait 2-3 minutes for build
-3. Get your live URL: `https://your-project.vercel.app`
+Do not deploy yet — add the environment variables first, otherwise the first
+build produces a site that cannot reach Supabase.
 
 ---
 
-## Step 3: Configure Supabase for Production
+## 3. Environment variables
 
-### A. Add Vercel URL to Supabase
+Add these under **Settings → Environment Variables**, scoped to Production,
+Preview, and Development.
 
-1. Go to https://supabase.com/dashboard
-2. Select your project
-3. Go to **Settings** → **API**
-4. Scroll to **"Site URL"**
-5. Add your Vercel URL: `https://your-project.vercel.app`
+| Variable | Value | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://wzwqtgcoezkblkhsggbg.supabase.co` | Public |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → anon key | Public by design, protected by RLS |
+| `NEXT_PUBLIC_SITE_URL` | Your Vercel production URL | See warning below |
+| `RESEND_API_KEY` | Your Resend key | Omit to disable delivery |
+| `EMAIL_FROM` | `SelfDiscovery <no-reply@yourdomain.com>` | Must match a verified domain |
 
-### B. Add to Redirect URLs
+**`NEXT_PUBLIC_SITE_URL` is the one that breaks things silently.** Invitation
+links, password-reset links, and the OAuth callback are all constructed from
+it. If it still points at `http://localhost:3000`, invited users receive links
+back to their own machine and sign-in redirects fail. Set it to the real
+production URL as soon as Vercel assigns one, then redeploy so the value is
+baked into the client bundle.
 
-1. In Supabase Settings → **Authentication**
-2. Add to **"Redirect URLs"**:
-```
-https://your-project.vercel.app/**
-https://your-project.vercel.app/auth/callback
-```
-
----
-
-## Step 4: Run Database Migrations (IMPORTANT!)
-
-Your production database needs the user tables:
-
-1. Open Supabase Dashboard
-2. Go to **SQL Editor**
-3. Run **`RUN_THIS_IN_SUPABASE.sql`**
-4. Verify success
+Without `RESEND_API_KEY` and `EMAIL_FROM` the platform still works: every
+message is recorded in `email_outbox` with status `queued`, and the admin UI
+shows a copyable invitation link instead of relying on delivery.
 
 ---
 
-## Step 5: Test Production App
+## 4. Point Supabase at the deployment
 
-1. Visit your Vercel URL
-2. Sign up with a new account
-3. Test all features:
-   - ✅ User profile dropdown
-   - ✅ Notifications
-   - ✅ Global search
-   - ✅ Settings page
-   - ✅ All dashboard pages
+In **Supabase → Authentication → URL Configuration**:
 
----
+- **Site URL**: `https://<your-app>.vercel.app`
+- **Redirect URLs**, add both:
+  - `https://<your-app>.vercel.app/**`
+  - `https://<your-app>.vercel.app/auth/callback`
 
-## 🎯 Deployment Checklist
+Keep `http://localhost:3000/**` in the list so local development continues to
+work.
 
-- [ ] Push code to GitHub
-- [ ] Create Vercel project
-- [ ] Add environment variables
-- [ ] Deploy to Vercel
-- [ ] Get live URL
-- [ ] Add URL to Supabase
-- [ ] Configure redirect URLs
-- [ ] Run database migration
-- [ ] Test production app
-- [ ] Verify all features work
+If Google sign-in is enabled, add the same callback to the Google Cloud OAuth
+client under **Authorized redirect URIs**, alongside the Supabase-hosted one
+(`https://wzwqtgcoezkblkhsggbg.supabase.co/auth/v1/callback`).
 
 ---
 
-## 🔧 Troubleshooting
+## 5. Email domain
 
-### Build Fails on Vercel
-- Check environment variables are set
-- Check build logs for specific errors
-- Verify `package.json` has all dependencies
+Resend's sandbox sender (`onboarding@resend.dev`) only delivers to the address
+that owns the Resend account. Every approval, rejection, and invitation email
+to anyone else is rejected with a 403 and lands in the outbox marked `failed`.
 
-### Authentication Fails
-- Add Vercel URL to Supabase redirect URLs
-- Check environment variables are correct
-- Clear browser cache and try again
-
-### Database Errors
-- Run `RUN_THIS_IN_SUPABASE.sql` migration
-- Check RLS policies in Supabase
-- Verify connection string is correct
+To email real members, verify a domain at https://resend.com/domains, add the
+DNS records it gives you, then set `EMAIL_FROM` to an address on that domain.
 
 ---
 
-## 📊 After Deployment
+## 6. Smoke test the deployment
 
-Your app will be live at:
-```
-https://your-project-name.vercel.app
-```
-
-### Features Available:
-- ✅ Production-ready UI
-- ✅ User authentication
-- ✅ Profile management
-- ✅ Activity tracking
-- ✅ Global search
-- ✅ All business modules
-- ✅ Automatic deployments on git push
+1. Sign in as an existing admin and confirm the sidebar shows **Access control**
+2. Open `/admin/email` and send a test message; confirm it appears as `sent`
+3. Sign up with a fresh address and confirm it lands on **Waiting for approval**
+   rather than the dashboard
+4. Approve that account from `/admin/members` and confirm the sidebar reflects
+   only the modules it was granted
+5. Send an invitation and confirm the accept link resolves on the production
+   domain, not localhost
+6. Fail a login five times and confirm the lockout message appears
 
 ---
 
-## 🎉 Congratulations!
+## Troubleshooting
 
-Your SelfDiscovery platform is now live in production! 🚀
+**Build succeeds but every page redirects to login.** The Supabase environment
+variables are missing or scoped to the wrong environment. `NEXT_PUBLIC_*`
+values are read at build time, so redeploy after changing them.
 
-**Next Steps:**
-1. Share the URL with your team
-2. Set up custom domain (optional)
-3. Monitor analytics in Vercel
-4. Set up error tracking (optional)
+**OAuth returns to localhost.** `NEXT_PUBLIC_SITE_URL` was not updated, or the
+deployment was not rebuilt after updating it.
 
----
+**"Infinite recursion detected in policy for relation user_profiles."**
+Migration 04 has not been applied to this database.
 
-**Need Help?** Check Vercel docs: https://vercel.com/docs
+**Invitations never arrive.** Expected on the sandbox sender. Check
+`/admin/email` for the failure reason and use the copyable link in the invite
+modal until a domain is verified.
