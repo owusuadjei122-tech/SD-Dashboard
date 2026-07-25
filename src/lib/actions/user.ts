@@ -9,7 +9,11 @@ export interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
+  google_avatar_url?: string | null;
+  avatar_source_preference?: "google" | "platform";
   role: string;
+  approval_status?: "pending" | "approved" | "rejected" | "suspended";
+  auth_provider?: "email" | "google" | "invitation";
   preferences: Record<string, any>;
   created_at: string;
   updated_at: string;

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateUserProfile, type UserProfile, type UserActivity } from "@/lib/actions/user";
+import { SecurityPanel } from "@/components/settings/SecurityPanel";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -296,40 +297,28 @@ export function SettingsClient({ profile, activities, activityStats }: SettingsC
 
           {/* Security Tab */}
           {activeTab === "security" && (
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle>Security & Roles</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
-                    <h3 className="font-semibold text-slate-900 mb-2">Current Role</h3>
-                    <Badge variant="default" className="text-sm">
-                      {profile.role.toUpperCase()}
-                    </Badge>
-                    <p className="text-sm text-slate-600 mt-2">
-                      {profile.role === "admin" 
-                        ? "You have full access to all features and settings."
-                        : "You have standard user access. Contact an admin for role changes."}
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-[17px] font-semibold text-[#1d1d1f]">Your role</h3>
+                    <p className="mt-1 text-[13px] text-[#86868b]">
+                      {profile.role === "admin"
+                        ? "You have full access to every module and the admin console."
+                        : "Standard access. Contact an administrator to change your role."}
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>Account Created</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(profile.created_at)}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Last Updated</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(profile.updated_at)}
-                    </p>
-                  </div>
+                  <Badge variant={profile.role === "admin" ? "default" : "secondary"}>
+                    {profile.role.toUpperCase()}
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="mt-4 text-[12px] text-[#86868b]">
+                  Account created {formatDate(profile.created_at)}
+                </p>
+              </div>
+
+              <SecurityPanel email={profile.email} />
+            </div>
           )}
 
           {/* Notifications Tab */}
@@ -339,12 +328,22 @@ export function SettingsClient({ profile, activities, activityStats }: SettingsC
                 <CardTitle>Notification Preferences</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl text-center">
-                  <Bell className="w-12 h-12 mx-auto mb-3 text-purple-600" />
-                  <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+                <div className="rounded-xl bg-slate-50 p-6 text-center">
+                  <Bell className="mx-auto mb-3 h-10 w-10 text-slate-400" />
+                  <h3 className="mb-2 font-semibold text-slate-900">
+                    Only security notifications for now
+                  </h3>
                   <p className="text-sm text-slate-600">
-                    Notification preferences will be available in a future update.
+                    New sign-in alerts are controlled under Security &amp; Roles. Product and
+                    activity notifications are coming later.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("security")}
+                    className="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                  >
+                    Open security settings
+                  </button>
                 </div>
               </CardContent>
             </Card>

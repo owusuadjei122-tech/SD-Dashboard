@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 
 interface AuthShellProps {
@@ -8,7 +5,7 @@ interface AuthShellProps {
   headline: string;
   headlineAccent: string;
   description: string;
-  badges: { label: string; icon: LucideIcon }[];
+  badges?: { label: string; icon: LucideIcon }[];
 }
 
 export function AuthShell({
@@ -16,7 +13,7 @@ export function AuthShell({
   headline,
   headlineAccent,
   description,
-  badges,
+  badges = [],
 }: AuthShellProps) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#06080f] text-white">
@@ -35,12 +32,7 @@ export function AuthShell({
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-10 lg:flex-row lg:items-center lg:gap-16 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mb-10 flex flex-1 flex-col justify-center lg:mb-0"
-        >
+        <div className="mb-10 order-2 flex flex-1 flex-col justify-center lg:order-1 lg:mb-0">
           <div className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur-md">
             SelfDiscovery™ Platform
           </div>
@@ -56,30 +48,24 @@ export function AuthShell({
             {description}
           </p>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {badges.map(({ label, icon: Icon }, i) => (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm"
-              >
-                <Icon className="mb-2 h-5 w-5 text-indigo-300" />
-                <p className="text-sm font-medium text-white/90">{label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+          {badges.length > 0 && (
+            <div className="mt-10 hidden gap-4 lg:grid lg:grid-cols-3">
+              {badges.map(({ label, icon: Icon }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm"
+                >
+                  <Icon className="mb-2 h-5 w-5 text-indigo-300" />
+                  <p className="text-sm font-medium text-white/90">{label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-          className="w-full max-w-md shrink-0 lg:max-w-[420px]"
-        >
+        <div className="order-1 w-full max-w-md shrink-0 lg:order-2 lg:max-w-[420px]">
           {children}
-        </motion.div>
+        </div>
       </div>
     </div>
   );

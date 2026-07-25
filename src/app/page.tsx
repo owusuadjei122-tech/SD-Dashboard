@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowRight, BarChart3, Package, Shield } from "lucide-react";
 import { BRAND_NAME } from "@/lib/brand";
 
@@ -32,18 +31,19 @@ export default function Home() {
         </p>
 
         <div className="mt-10">
-          <Link
+          {/* Hard navigation avoids flaky App Router soft-nav when middleware runs */}
+          <a
             href="/login"
             className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-10 text-sm font-semibold shadow-lg shadow-indigo-500/25 transition hover:from-indigo-400 hover:to-violet-500"
           >
             Sign in to your workspace
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-          </Link>
+          </a>
           <p className="mt-4 text-sm text-white/40">
             New here?{" "}
-            <Link href="/signup" className="font-medium text-indigo-300 hover:text-indigo-200">
+            <a href="/signup" className="font-medium text-indigo-300 hover:text-indigo-200">
               Create an account
-            </Link>
+            </a>
           </p>
         </div>
 

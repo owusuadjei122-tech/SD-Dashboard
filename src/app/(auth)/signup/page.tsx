@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Eye,
@@ -17,6 +15,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { AuthShell, AuthCard, authInputClass, authButtonClass } from "@/components/auth/AuthShell";
+import { AuthDivider, GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { formatAuthError } from "@/lib/auth-errors";
 
 function splitFullName(fullName: string) {
   const parts = fullName.trim().split(/\s+/);
@@ -31,52 +31,71 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setInfo(null);
 
-    const supabase = createClient();
-    const { first_name, last_name } = splitFullName(fullName);
+    try {
+      const supabase = createClient();
+      const { first_name, last_name } = splitFullName(fullName);
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          first_name,
-          last_name,
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+          data: {
+            full_name: fullName,
+            first_name,
+            last_name,
+          },
         },
-      },
-    });
+      });
 
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      try {
-        await supabase.from("user_profiles").insert({
-          id: data.user.id,
-          email: data.user.email ?? email,
-          first_name,
-          last_name,
-          role: "user",
-          preferences: { locale: typeof navigator !== "undefined" ? navigator.language : "en-US" },
-        });
-      } catch {
-        // Profile may be created by DB trigger; non-blocking
+      if (authError) {
+        setError(formatAuthError(authError));
+        return;
       }
-    }
 
-    router.push("/dashboard");
-    router.refresh();
+      if (data.user) {
+        try {
+          await supabase.from("user_profiles").upsert({
+            id: data.user.id,
+            email: data.user.email ?? email.trim(),
+            first_name,
+            last_name,
+            role: "user",
+            approval_status: "pending",
+            auth_provider: "email",
+            preferences: {
+              locale: typeof navigator !== "undefined" ? navigator.language : "en-US",
+            },
+          });
+        } catch {
+          // Profile may be created by DB trigger; non-blocking
+        }
+      }
+
+      // Email confirmation is enabled on this Supabase project
+      if (!data.session) {
+        setInfo(
+          "Account created. Check your email for a confirmation link, then sign in. An administrator must approve your access before you can enter the workspace."
+        );
+        return;
+      }
+
+      // Middleware routes pending users to the waiting screen
+      window.location.assign("/pending-approval");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,6 +110,8 @@ export default function SignUpPage() {
       ]}
     >
       <AuthCard title="Create your account" subtitle="Join the SelfDiscovery workspace">
+        <GoogleSignInButton label="Sign up with Google" />
+        <AuthDivider />
         <form onSubmit={handleSignUp} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label htmlFor="fullName" className="text-sm font-medium text-white/80">
@@ -159,16 +180,24 @@ export default function SignUpPage() {
           </div>
 
           {error && (
-            <motion.p
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-            >
+            <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
               {error}
-            </motion.p>
+            </p>
           )}
 
-          <button type="submit" disabled={loading} className={authButtonClass}>
+          {info && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              <p>{info}</p>
+              <Link
+                href="/login"
+                className="mt-2 inline-block font-medium text-indigo-300 underline-offset-2 hover:underline"
+              >
+                Go to sign in
+              </Link>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading || !!info} className={authButtonClass}>
             {loading ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

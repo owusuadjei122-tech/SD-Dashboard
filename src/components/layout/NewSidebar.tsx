@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
+import { getAccessProfile } from "@/lib/rbac/access";
+import { SECTION_MODULE_MAP } from "@/lib/rbac/modules";
+import type { ModuleId } from "@/lib/rbac/types";
 import {
   ChevronDown,
   LayoutDashboard,
@@ -22,6 +25,7 @@ import {
   ClipboardList,
   UsersRound,
   FolderOpen,
+  Shield,
 } from "lucide-react";
 
 interface NavSection {
@@ -75,11 +79,33 @@ interface NewSidebarProps {
 
 export function NewSidebar({ onNavigate }: NewSidebarProps) {
   const pathname = usePathname();
+  const [modules, setModules] = useState<ModuleId[] | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([
     "Team Workspace",
     "SelfDiscovery Wear",
     "SelfDiscovery Library",
   ]);
+
+  useEffect(() => {
+    getAccessProfile()
+      .then((profile) => {
+        if (!profile) return;
+        setModules(profile.modules);
+        setIsAdmin(profile.isAdmin);
+      })
+      .catch(() => {
+        setModules(["workspace", "wear", "library"]);
+      });
+  }, []);
+
+  const visibleNavigation = useMemo(() => {
+    if (!modules) return navigation;
+    return navigation.filter((section) => {
+      const moduleId = SECTION_MODULE_MAP[section.title];
+      return !moduleId || modules.includes(moduleId);
+    });
+  }, [modules]);
 
   const toggleSection = (title: string) => {
     setExpandedSections((prev) =>
@@ -87,11 +113,20 @@ export function NewSidebar({ onNavigate }: NewSidebarProps) {
     );
   };
 
+  const homeHref =
+    modules?.includes("wear")
+      ? "/dashboard"
+      : modules?.includes("workspace")
+        ? "/planning"
+        : modules?.includes("library")
+          ? "/library/dashboard"
+          : "/settings";
+
   return (
     <aside className="flex h-full w-full shrink-0 flex-col border-r border-black/[0.06] bg-white shadow-xl lg:shadow-none">
       <div className="flex h-[60px] items-center px-5">
         <Link
-          href="/dashboard"
+          href={homeHref}
           onClick={onNavigate}
           className="flex items-center gap-3 transition-opacity hover:opacity-80"
         >
@@ -108,7 +143,7 @@ export function NewSidebar({ onNavigate }: NewSidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-        {navigation.map((section) => {
+        {visibleNavigation.map((section) => {
           const isOpen = expandedSections.includes(section.title);
           const SectionIcon = section.icon;
           const hasActiveItem = section.items.some((item) => pathname.startsWith(item.href));
@@ -177,6 +212,21 @@ export function NewSidebar({ onNavigate }: NewSidebarProps) {
       </nav>
 
       <div className="space-y-0.5 border-t border-black/[0.06] p-3">
+        {isAdmin && (
+          <Link
+            href="/admin/members"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+              pathname.startsWith("/admin")
+                ? "bg-[#0071e3]/[0.08] text-[#0071e3]"
+                : "text-[#424245] hover:bg-black/[0.04] hover:text-[#1d1d1f]"
+            )}
+          >
+            <Shield className="h-[15px] w-[15px] stroke-[1.75]" />
+            Access control
+          </Link>
+        )}
         <Link
           href="/settings"
           onClick={onNavigate}
