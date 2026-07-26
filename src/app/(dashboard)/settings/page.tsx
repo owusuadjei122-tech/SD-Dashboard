@@ -8,7 +8,17 @@ import {
 import { SettingsClient } from "./SettingsClient";
 import { redirect } from "next/navigation";
 
-export default async function SettingsPage() {
+const TABS = ["profile", "security", "notifications", "activity"] as const;
+type Tab = (typeof TABS)[number];
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab: Tab = TABS.includes(tab as Tab) ? (tab as Tab) : "profile";
+
   const profile = await getUserProfile();
   
   if (!profile) {
@@ -38,5 +48,12 @@ export default async function SettingsPage() {
     description: "Viewed settings page",
   });
 
-  return <SettingsClient profile={profile} activities={activities} activityStats={activityStats} />;
+  return (
+    <SettingsClient
+      profile={profile}
+      activities={activities}
+      activityStats={activityStats}
+      initialTab={initialTab}
+    />
+  );
 }

@@ -12,7 +12,9 @@ export function UserProfileDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getUserProfile().then(setProfile);
+    getUserProfile()
+      .then(setProfile)
+      .catch(() => setProfile(null));
   }, []);
 
   useEffect(() => {
@@ -122,7 +124,7 @@ export function UserProfileDropdown() {
 
               <div className="py-1.5">
                 <Link
-                  href="/settings"
+                  href="/settings?tab=profile"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#424245] transition-colors hover:bg-black/[0.03]"
                 >
@@ -130,21 +132,21 @@ export function UserProfileDropdown() {
                   Profile
                 </Link>
                 <Link
-                  href="/settings"
+                  href="/settings?tab=security"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#424245] transition-colors hover:bg-black/[0.03]"
                 >
                   <Settings className="h-4 w-4" strokeWidth={1.75} />
-                  Settings
+                  Security &amp; roles
                 </Link>
-                <button
-                  type="button"
+                <Link
+                  href="/settings?tab=notifications"
                   onClick={() => setIsOpen(false)}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#424245] transition-colors hover:bg-black/[0.03]"
+                  className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#424245] transition-colors hover:bg-black/[0.03]"
                 >
                   <Bell className="h-4 w-4" strokeWidth={1.75} />
                   Notifications
-                </button>
+                </Link>
               </div>
 
               <div className="border-t border-black/[0.06] py-1.5">

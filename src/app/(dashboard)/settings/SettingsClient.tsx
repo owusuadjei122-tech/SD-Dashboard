@@ -26,12 +26,18 @@ interface SettingsClientProps {
     moduleStats: Record<string, number>;
     lastActivity: string | null;
   } | null;
+  initialTab?: TabType;
 }
 
 type TabType = "profile" | "security" | "notifications" | "activity";
 
-export function SettingsClient({ profile, activities, activityStats }: SettingsClientProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("profile");
+export function SettingsClient({
+  profile,
+  activities,
+  activityStats,
+  initialTab = "profile",
+}: SettingsClientProps) {
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [firstName, setFirstName] = useState(profile.first_name || "");
   const [lastName, setLastName] = useState(profile.last_name || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");

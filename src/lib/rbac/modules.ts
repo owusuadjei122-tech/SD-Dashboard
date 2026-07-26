@@ -74,8 +74,7 @@ export function isAuthPath(pathname: string): boolean {
   return (
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
-    pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/verify-email")
+    pathname.startsWith("/forgot-password")
   );
 }
 

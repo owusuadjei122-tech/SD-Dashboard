@@ -74,6 +74,7 @@ function Toggle({
 
 export function SecurityPanel({ email }: { email: string }) {
   const [overview, setOverview] = useState<SecurityOverview | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -89,8 +90,11 @@ export function SecurityPanel({ email }: { email: string }) {
 
   const reload = () => {
     getSecurityOverview()
-      .then(setOverview)
-      .catch(() => setOverview(null));
+      .then((data) => {
+        setOverview(data);
+        setLoadFailed(false);
+      })
+      .catch(() => setLoadFailed(true));
   };
 
   useEffect(reload, []);
@@ -140,7 +144,9 @@ export function SecurityPanel({ email }: { email: string }) {
       });
 
       if (enrollError) throw new Error(enrollError.message);
-      if (!data) throw new Error("Could not start enrollment.");
+      if (!data?.totp?.qr_code || !data.totp.secret) {
+        throw new Error("Could not start enrollment.");
+      }
 
       setFactor({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
       setEnrolling(true);
@@ -200,7 +206,23 @@ export function SecurityPanel({ email }: { email: string }) {
   if (!overview) {
     return (
       <div className={cardClass}>
-        <p className="text-sm text-[#86868b]">Loading your security settings...</p>
+        {loadFailed ? (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[14px] font-medium text-[#1d1d1f]">
+                Could not load your security settings
+              </p>
+              <p className="mt-0.5 text-[13px] text-[#86868b]">
+                Check your connection and try again.
+              </p>
+            </div>
+            <button type="button" onClick={reload} className={buttonSecondary}>
+              Retry
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-[#86868b]">Loading your security settings...</p>
+        )}
       </div>
     );
   }

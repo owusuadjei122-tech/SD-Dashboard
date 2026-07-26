@@ -195,3 +195,57 @@ export async function recordPasswordChange() {
 
   await recordSecurityEvent({ userId: user.id, type: "password_change" });
 }
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  tone: "info" | "success" | "warning";
+}
+
+const EVENT_COPY: Record<string, { title: string; tone: NotificationItem["tone"] }> = {
+  login: { title: "New sign-in", tone: "info" },
+  logout: { title: "Signed out", tone: "info" },
+  password_change: { title: "Password changed", tone: "success" },
+  mfa_enrolled: { title: "Two-factor authentication enabled", tone: "success" },
+  mfa_removed: { title: "Two-factor authentication removed", tone: "warning" },
+  session_revoked: { title: "Session revoked", tone: "info" },
+  account_approved: { title: "Account approved", tone: "success" },
+};
+
+/**
+ * Recent account activity for the header bell. Backed by `security_events`,
+ * so it reflects real sign-ins and credential changes rather than a feed the
+ * platform does not have yet.
+ */
+export async function listNotifications(): Promise<NotificationItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("security_events")
+    .select("id, type, browser, os, ip_address, is_suspicious, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(15);
+
+  if (error || !data) return [];
+
+  return data.map((event) => {
+    const copy = EVENT_COPY[event.type] ?? { title: "Account activity", tone: "info" as const };
+    const where = [event.browser, event.os].filter(Boolean).join(" on ");
+    const detail = [where, event.ip_address].filter(Boolean).join(" · ");
+
+    return {
+      id: event.id,
+      title: event.is_suspicious ? `${copy.title} from a new device` : copy.title,
+      message: detail || "No device details recorded.",
+      createdAt: event.created_at,
+      tone: event.is_suspicious ? "warning" : copy.tone,
+    };
+  });
+}

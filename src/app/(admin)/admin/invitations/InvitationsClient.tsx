@@ -45,9 +45,13 @@ export function InvitationsClient({
   }, [invitations, search, status]);
 
   const copy = async (invite: InvitationRow) => {
-    await navigator.clipboard.writeText(invite.invite_url);
-    setCopiedId(invite.id);
-    setTimeout(() => setCopiedId(null), 2000);
+    try {
+      await navigator.clipboard.writeText(invite.invite_url);
+      setCopiedId(invite.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setError("Could not copy the link. Select it manually and copy instead.");
+    }
   };
 
   const run = (fn: () => Promise<void>) => {

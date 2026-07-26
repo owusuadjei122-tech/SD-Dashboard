@@ -70,7 +70,11 @@ function AcceptInviteInner() {
         } = await supabase.auth.getUser();
         if (user) {
           setLoading(true);
-          await finish();
+          try {
+            await finish();
+          } catch {
+            if (!cancelled) setError("Could not accept the invitation. Try again.");
+          }
           if (!cancelled) setLoading(false);
         }
       }
