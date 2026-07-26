@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatAuthError } from "@/lib/auth-errors";
+
+/** How long to wait for the OAuth redirect before assuming it will not happen. */
+const REDIRECT_TIMEOUT_MS = 8000;
 
 export function GoogleSignInButton({
   label = "Continue with Google",
@@ -14,6 +17,14 @@ export function GoogleSignInButton({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Returning via the back button restores this page from cache with the
+  // button still disabled, so clear it whenever the page is shown again.
+  useEffect(() => {
+    const reset = () => setLoading(false);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -37,8 +48,18 @@ export function GoogleSignInButton({
       if (oauthError) {
         setError(formatAuthError(oauthError));
         setLoading(false);
+        return;
       }
-      // Browser navigates away on success
+
+      // The browser normally navigates away here. If it has not after a few
+      // seconds, Google sign-in is misconfigured and the button would
+      // otherwise sit on "Redirecting..." forever.
+      window.setTimeout(() => {
+        setLoading(false);
+        setError(
+          "Google sign-in did not open. Check that the Google provider is enabled in Supabase and that this site is an allowed redirect URL."
+        );
+      }, REDIRECT_TIMEOUT_MS);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed");
       setLoading(false);

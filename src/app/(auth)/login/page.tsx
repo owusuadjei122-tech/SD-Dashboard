@@ -28,6 +28,20 @@ function formatWait(seconds?: number) {
   return minutes <= 1 ? "a minute" : `${minutes} minutes`;
 }
 
+/**
+ * Lockout tracking and sign-in telemetry must never stop someone signing in.
+ * A deployment that lands while this page is open invalidates its server
+ * action ids, and Next.js reports that as an opaque "unexpected response"
+ * error — which previously surfaced as a failed login on valid credentials.
+ */
+async function optional<T>(run: () => Promise<T>): Promise<T | null> {
+  try {
+    return await run();
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +54,7 @@ export default function LoginPage() {
   const [mfaCode, setMfaCode] = useState("");
 
   const finishSignIn = async () => {
-    await recordSignIn("email");
+    await optional(() => recordSignIn("email"));
     // Middleware routes pending/rejected users to the right screen
     window.location.assign("/dashboard");
   };
@@ -69,8 +83,8 @@ export default function LoginPage() {
     setInfo(null);
 
     try {
-      const gate = await checkLoginAllowed(email);
-      if (gate.locked) {
+      const gate = await optional(() => checkLoginAllowed(email));
+      if (gate?.locked) {
         setError(
           gate.reason === "ip"
             ? `Too many failed attempts from this network. Try again in ${formatWait(gate.retryAfterSeconds)}.`
@@ -86,7 +100,9 @@ export default function LoginPage() {
       });
 
       if (authError) {
-        const outcome = await registerLoginOutcome(email, false);
+        const outcome = (await optional(() => registerLoginOutcome(email, false))) ?? {
+          locked: false,
+        };
         if (outcome.locked) {
           setError(
             `Too many failed attempts. This account is locked for ${formatWait(outcome.retryAfterSeconds)}.`
@@ -103,7 +119,7 @@ export default function LoginPage() {
         return;
       }
 
-      await registerLoginOutcome(email, true);
+      await optional(() => registerLoginOutcome(email, true));
 
       if (await handleMfaChallenge()) return;
 
