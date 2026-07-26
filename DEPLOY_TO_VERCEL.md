@@ -1,7 +1,13 @@
 # Deploying SelfDiscovery to Vercel
 
 Repository: `owusuadjei122-tech/SD-Dashboard` (branch `main`)
+Vercel project: `theolencer1s-projects/sd-dashboard`
+Production URL: https://sd-dashboard-theolencer1s-projects.vercel.app
 Supabase project: `wzwqtgcoezkblkhsggbg`
+
+The project is already deployed and its environment variables are set. Steps 2
+and 3 below are kept as reference for rebuilding it from scratch; the only step
+still outstanding is step 4, the Supabase URL configuration.
 
 ---
 
@@ -66,10 +72,10 @@ shows a copyable invitation link instead of relying on delivery.
 
 In **Supabase → Authentication → URL Configuration**:
 
-- **Site URL**: `https://<your-app>.vercel.app`
+- **Site URL**: `https://sd-dashboard-theolencer1s-projects.vercel.app`
 - **Redirect URLs**, add both:
-  - `https://<your-app>.vercel.app/**`
-  - `https://<your-app>.vercel.app/auth/callback`
+  - `https://sd-dashboard-theolencer1s-projects.vercel.app/**`
+  - `https://sd-dashboard-theolencer1s-projects.vercel.app/auth/callback`
 
 Keep `http://localhost:3000/**` in the list so local development continues to
 work.
